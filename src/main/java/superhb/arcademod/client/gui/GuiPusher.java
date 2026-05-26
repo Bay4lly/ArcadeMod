@@ -1,18 +1,19 @@
 package superhb.arcademod.client.gui;
 
-import net.minecraft.client.gui.GuiScreen;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.world.World;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.Level;
 import superhb.arcademod.client.entity.EntityCamera;
 
-import java.io.IOException;
-
-public class GuiPusher extends GuiScreen {
-    private final World world;
+public class GuiPusher extends Screen {
+    private final Level world;
     private final double x, y, z;
-    private final EntityPlayer player;
+    private final Player player;
 
-    public GuiPusher (World world, double x, double y, double z, EntityPlayer player) {
+    public GuiPusher(Level world, double x, double y, double z, Player player) {
+        super(Component.literal("Pusher"));
         this.world = world;
         this.x = x;
         this.y = y;
@@ -21,26 +22,35 @@ public class GuiPusher extends GuiScreen {
     }
 
     @Override
-    public void initGui () {
-
-    }
-
-    @Override
-    public void drawScreen(int mouseX, int mouseY, float partialTicks) {
-        super.drawScreen(mouseX, mouseY, partialTicks);
-        this.mc.setRenderViewEntity(new EntityCamera(world, x, y, z));
-    }
-
-    @Override
-    protected void keyTyped(char typedChar, int keyCode) throws IOException {
-        if (keyCode == 1) { // Esc
-            this.mc.setRenderViewEntity(player);
+    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
+        super.render(guiGraphics, mouseX, mouseY, partialTicks);
+        // In 1.20.1, we might need a persistent camera entity or handle this in a tick/event.
+        // For now, let's keep it similar to the original.
+        if (this.minecraft != null && !(this.minecraft.getCameraEntity() instanceof EntityCamera)) {
+             this.minecraft.setCameraEntity(new EntityCamera(world, x, y, z));
         }
-        super.keyTyped(typedChar, keyCode);
     }
 
     @Override
-    public boolean doesGuiPauseGame () {
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (keyCode == 256) { // ESC
+            if (this.minecraft != null) {
+                this.minecraft.setCameraEntity(player);
+            }
+        }
+        return super.keyPressed(keyCode, scanCode, modifiers);
+    }
+
+    @Override
+    public boolean isPauseScreen() {
         return false;
+    }
+
+    @Override
+    public void onClose() {
+        if (this.minecraft != null) {
+            this.minecraft.setCameraEntity(player);
+        }
+        super.onClose();
     }
 }

@@ -1,29 +1,33 @@
 package superhb.arcademod.util;
 
-import com.google.common.collect.ImmutableList;
-import net.minecraft.client.resources.I18n;
-import net.minecraft.client.settings.KeyBinding;
-import net.minecraftforge.fml.client.registry.ClientRegistry;
-import org.lwjgl.input.Keyboard;
-import java.util.List;
+import net.minecraft.client.KeyMapping;
+import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.api.distmarker.Dist;
+import org.lwjgl.glfw.GLFW;
+import superhb.arcademod.Reference;
 
+@Mod.EventBusSubscriber(modid = Reference.MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public class KeyHandler {
-	public static KeyBinding up, down, left, right, select, jump;
-	
-	public static final List<KeyBinding> bindings;
-	
-	static {
-		bindings = ImmutableList.of(
-				up = new KeyBinding(I18n.format("control.arcademod:up.name"), Keyboard.KEY_UP, I18n.format("mod.arcademod:name.locale")),
-				down = new KeyBinding(I18n.format("control.arcademod:down.name"), Keyboard.KEY_DOWN, I18n.format("mod.arcademod:name.locale")),
-				left = new KeyBinding(I18n.format("control.arcademod:left.name"), Keyboard.KEY_LEFT, I18n.format("mod.arcademod:name.locale")),
-				right = new KeyBinding(I18n.format("control.arcademod:right.name"), Keyboard.KEY_RIGHT, I18n.format("mod.arcademod:name.locale")),
-				select = new KeyBinding(I18n.format("control.arcademod:select.name"), Keyboard.KEY_RETURN, I18n.format("mod.arcademod:name.locale")),
-				jump = new KeyBinding(I18n.format("control.arcademod:jump.name"), Keyboard.KEY_SPACE, I18n.format("mod.arcademod:name.locale"))
-		);
-	}
-	
-	public static void registerKeyBinding () {
-		for (KeyBinding key : bindings) ClientRegistry.registerKeyBinding(key);
-	}
+    public static KeyMapping up, down, left, right, select, jump;
+
+    static {
+        up = new KeyMapping("control.arcademod:up.name", GLFW.GLFW_KEY_UP, "mod.arcademod:name.locale");
+        down = new KeyMapping("control.arcademod:down.name", GLFW.GLFW_KEY_DOWN, "mod.arcademod:name.locale");
+        left = new KeyMapping("control.arcademod:left.name", GLFW.GLFW_KEY_LEFT, "mod.arcademod:name.locale");
+        right = new KeyMapping("control.arcademod:right.name", GLFW.GLFW_KEY_RIGHT, "mod.arcademod:name.locale");
+        select = new KeyMapping("control.arcademod:select.name", GLFW.GLFW_KEY_ENTER, "mod.arcademod:name.locale");
+        jump = new KeyMapping("control.arcademod:jump.name", GLFW.GLFW_KEY_SPACE, "mod.arcademod:name.locale");
+    }
+
+    @SubscribeEvent
+    public static void registerKeyMappings(RegisterKeyMappingsEvent event) {
+        event.register(up);
+        event.register(down);
+        event.register(left);
+        event.register(right);
+        event.register(select);
+        event.register(jump);
+    }
 }

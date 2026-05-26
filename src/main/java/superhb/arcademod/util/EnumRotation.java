@@ -1,9 +1,9 @@
 package superhb.arcademod.util;
 
-import net.minecraft.util.IStringSerializable;
-import net.minecraft.util.math.Vec3i;
+import net.minecraft.util.StringRepresentable;
+import net.minecraft.core.Vec3i;
 
-public enum EnumRotation implements IStringSerializable {
+public enum EnumRotation implements StringRepresentable {
     NORTH(0, 4, "north", new Vec3i(0, 0, -1)),
     NORTHEAST(1, 5, "northeast", new Vec3i(1, 0, -1)),
     EAST(2, 6, "east", new Vec3i(1, 0, 0)),
@@ -26,7 +26,7 @@ public enum EnumRotation implements IStringSerializable {
     }
 
     @Override
-    public String getName () {
+    public String getSerializedName () {
         return name;
     }
 }

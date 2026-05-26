@@ -1,12 +1,12 @@
 {
 	"parent": "block/block",
     "textures": {
-        "0": "arcademod:blocks/plushie/creeper/creeper_foot",
-        "1": "arcademod:blocks/plushie/creeper/creeper_body_front",
-        "2": "arcademod:blocks/plushie/creeper/creeper_body_back",
-        "3": "arcademod:blocks/plushie/creeper/creeper_head_front",
-        "4": "arcademod:blocks/plushie/creeper/creeper_head_back",
-        "particle": "arcademod:blocks/plushie/creeper/creeper_body_front"
+        "0": "arcademod:block/plushie/creeper/creeper_foot",
+        "1": "arcademod:block/plushie/creeper/creeper_body_front",
+        "2": "arcademod:block/plushie/creeper/creeper_body_back",
+        "3": "arcademod:block/plushie/creeper/creeper_head_front",
+        "4": "arcademod:block/plushie/creeper/creeper_head_back",
+        "particle": "arcademod:block/plushie/creeper/creeper_body_front"
     },
     "elements": [
         {

@@ -1,85 +1,28 @@
 {
-	"forge_marker": 1,
-	"defaults": {
-		"model": "arcademod:generic_machine.obj",
-		"custom": { "flip-v": true }
-	},
-	"variants": {
-        "game": {
-			"snake": {
-				"textures": {
-					"#Back": "arcademod:blocks/snake",
-					"#Bezel": "arcademod:blocks/snake",
-					"#Bottom": "arcademod:blocks/snake",
-					"#Coin": "arcademod:blocks/snake",
-					"#Controller": "arcademod:blocks/snake",
-					"#Front": "arcademod:blocks/snake",
-					"#LeftSide": "arcademod:blocks/snake",
-					"#RightSide": "arcademod:blocks/snake",
-					"#Screen": "arcademod:blocks/snake",
-					"#ScreenBorder": "arcademod:blocks/snake",
-					"#Top": "arcademod:blocks/snake"
-				}
-			},
-            "tetrominoes": {
-                "model": "arcademod:tetris.obj"
-            },
-            "pacman": {
-            	"model": "arcademod:pacman.obj"
-            },
-            "pong": {
-            	"model": "arcademod:pong.obj"
-			},
-			"spaceinvaders": {
-            	"model": "arcademod:spaceinvaders.obj"
-            }
-		},
-		"facing": {
-			"south": {
-                "transform": {
-                	"gui": {
-                        "translation": [0, -0.167, 0],
-			            "rotation": [{ "x": 30 }, { "y": 225 }],
-			            "scale": 0.4167
-			        },
-			        "ground": {
-			            "scale": 0.25
-			        },
-			        "fixed": {
-                        "translation": [0, -0.25, 0],
-			            "scale": 0.5
-			        },
-			        "head": {
-			            "scale": 0.625
-			        },
-			        "firstperson_lefthand": {
-			            "rotation": [{ "y": -225 }],
-			            "scale": 0.4
-			        },
-			        "firstperson_righthand": {
-			        	"rotation": [{ "y": 45 }],
-			            "scale": 0.4
-			        },
-			        "thirdperson_lefthand": {
-			            "scale": 0.625
-			        },
-			        "thirdperson_righthand": {
-			        	"translation": [0, 2.5, 0],
-			        	"rotation": [{ "x": 75 }, { "y": 45 }],
-			            "scale": 0.375
-			        }
-                },
-				"y": 0
-			},
-			"west": {
-				"y": 90
-			},
-			"north": {
-				"y": 180
-			},
-			"east": {
-				"y": 270
-			}
-		}
-	}
+  "variants": {
+    "facing=north,game=snake": { "model": "arcademod:arcades/snake_machine", "y": 180 },
+    "facing=south,game=snake": { "model": "arcademod:arcades/snake_machine" },
+    "facing=east,game=snake": { "model": "arcademod:arcades/snake_machine", "y": 270 },
+    "facing=west,game=snake": { "model": "arcademod:arcades/snake_machine", "y": 90 },
+    "facing=north,game=tetrominoes": { "model": "arcademod:arcades/tetris_machine", "y": 180 },
+    "facing=south,game=tetrominoes": { "model": "arcademod:arcades/tetris_machine" },
+    "facing=east,game=tetrominoes": { "model": "arcademod:arcades/tetris_machine", "y": 270 },
+    "facing=west,game=tetrominoes": { "model": "arcademod:arcades/tetris_machine", "y": 90 },
+    "facing=north,game=pacman": { "model": "arcademod:arcades/pacman_machine", "y": 180 },
+    "facing=south,game=pacman": { "model": "arcademod:arcades/pacman_machine" },
+    "facing=east,game=pacman": { "model": "arcademod:arcades/pacman_machine", "y": 270 },
+    "facing=west,game=pacman": { "model": "arcademod:arcades/pacman_machine", "y": 90 },
+    "facing=north,game=pong": { "model": "arcademod:arcades/pong_machine", "y": 180 },
+    "facing=south,game=pong": { "model": "arcademod:arcades/pong_machine" },
+    "facing=east,game=pong": { "model": "arcademod:arcades/pong_machine", "y": 270 },
+    "facing=west,game=pong": { "model": "arcademod:arcades/pong_machine", "y": 90 },
+    "facing=north,game=spaceinvaders": { "model": "arcademod:arcades/space_invaders_machine", "y": 180 },
+    "facing=south,game=spaceinvaders": { "model": "arcademod:arcades/space_invaders_machine" },
+    "facing=east,game=spaceinvaders": { "model": "arcademod:arcades/space_invaders_machine", "y": 270 },
+    "facing=west,game=spaceinvaders": { "model": "arcademod:arcades/space_invaders_machine", "y": 90 }
+    ,"facing=north,game=kong": { "model": "arcademod:arcades/kong_machine", "y": 180 },
+    "facing=south,game=kong": { "model": "arcademod:arcades/kong_machine" },
+    "facing=east,game=kong": { "model": "arcademod:arcades/kong_machine", "y": 270 },
+    "facing=west,game=kong": { "model": "arcademod:arcades/kong_machine", "y": 90 }
+  }
 }

@@ -175,5 +175,12 @@
 				"stream": true
 			}
 		]
+	},
+	"effect.plushie": {
+		"sounds": [
+			{
+				"name": "arcademod:plushie"
+			}
+		]
 	}
 }

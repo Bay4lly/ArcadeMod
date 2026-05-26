@@ -1,28 +1,31 @@
 package superhb.arcademod.client.audio;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.audio.MovingSound;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.*;
-import net.minecraftforge.fml.relauncher.*;
+import net.minecraft.client.resources.sounds.AbstractTickableSoundInstance;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import superhb.arcademod.api.gui.GuiArcade;
-import superhb.arcademod.client.tileentity.TileEntityArcade;
+import superhb.arcademod.client.tileentity.BlockEntityArcade;
 
-@SideOnly(Side.CLIENT)
-public class LoopingSound extends MovingSound {
-    private TileEntityArcade tile;
+@OnlyIn(Dist.CLIENT)
+public class LoopingSound extends AbstractTickableSoundInstance {
+    private final BlockEntityArcade tile;
 
-    public LoopingSound (TileEntityArcade tileEntity, SoundEvent sound, SoundCategory category, float volume) {
-        super(sound, category);
+    public LoopingSound(BlockEntityArcade tileEntity, SoundEvent sound, SoundSource category, float volume) {
+        super(sound, category, net.minecraft.util.RandomSource.create());
         this.tile = tileEntity;
-        this.attenuationType = AttenuationType.NONE;
-        this.repeat = true;
-        this.repeatDelay = 0;
+        this.attenuation = net.minecraft.client.resources.sounds.SoundInstance.Attenuation.NONE;
+        this.looping = true;
+        this.delay = 0;
         this.volume = volume;
     }
 
     @Override
-    public void update () {
-        if (!(Minecraft.getMinecraft().currentScreen instanceof GuiArcade)) donePlaying = true;
+    public void tick() {
+        if (!(Minecraft.getInstance().screen instanceof GuiArcade)) {
+            this.stop();
+        }
     }
 }

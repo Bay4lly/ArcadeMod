@@ -1,131 +1,80 @@
 package superhb.arcademod.client.blocks;
 
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.util.*;
-import superhb.arcademod.Arcade;
-import superhb.arcademod.client.tileentity.TileEntityPusher;
-import superhb.arcademod.util.EnumGame;
-import net.minecraft.block.*;
-import net.minecraft.block.material.Material;
-import net.minecraft.block.properties.*;
-import net.minecraft.block.state.IBlockState;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.EnumBlockRenderType;
-import net.minecraft.util.math.*;
-import net.minecraft.world.*;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.BaseEntityBlock;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.RenderShape;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.DirectionProperty;
+import net.minecraft.world.phys.BlockHitResult;
+import superhb.arcademod.client.tileentity.BlockEntityPusher;
+import superhb.arcademod.init.ModRegistries;
 
-// TODO: Coin pusher machine
-@SuppressWarnings("deprecation")
-public class BlockPusher extends Block {
-	public static final PropertyDirection FACING = BlockDirectional.FACING;
-	public static final PropertyEnum GAME = PropertyEnum.create("game", EnumGame.class);
-	
-	public BlockPusher (Material material) {
-		super(material);
-	}
-	
-	@Override
-	public boolean hasTileEntity (IBlockState state) {
-		return true;
-	}
-	
-	@Override
-	public TileEntity createTileEntity (World world, IBlockState state) {
-		return new TileEntityPusher();
-	}
-	
-	@Override
-	public boolean isFullCube (IBlockState state) {
-		return false;
-	}
-	
-	@Override
-	public boolean isOpaqueCube (IBlockState state) {
-		return false;
-	}
-	
-	@Override
-	public boolean isPassable (IBlockAccess world, BlockPos pos) {
-		return false;
-	}
-	
-	@Override
-	public boolean canSpawnInBlock () {
-		return false;
-	}
-	
-	@Override
-	public boolean isReplaceable (IBlockAccess world, BlockPos pos) {
-		return false;
-	}
-	
-	@Override
-	public AxisAlignedBB getBoundingBox (IBlockState state, IBlockAccess source, BlockPos pos) {
-		//return new AxisAlignedBB(0.0D, 0.0D, 0.0D, 16.0D, 32.0D, 16.0D);
-		return new AxisAlignedBB(0.0D, 0.0D, 0.0D, 1.0D, 1.0D, 1.0D);
-	}
-	
-	@Override
-	@SideOnly(Side.CLIENT)
-	public AxisAlignedBB getSelectedBoundingBox (IBlockState state, World world, BlockPos pos) {
-		return state.getBoundingBox(world, pos).offset(pos);
-	}
-	
-	@Override
-	public IBlockState getActualState (IBlockState state, IBlockAccess world, BlockPos pos) {
-		return state;
-	}
-	
-	@Override
-	public IBlockState getStateFromMeta (int meta) {
-		return getDefaultState();
-	}
-	
-	@Override
-	public int getMetaFromState (IBlockState state) {
-		return 0;
-	}
+import javax.annotation.Nullable;
 
-    /*
-    @Override
-    protected BlockStateContainer createBlockState () {
-        return new BlockStateContainer(this, new IProperty[] { FACING });
+public class BlockPusher extends BaseEntityBlock {
+    public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
+
+    public BlockPusher(BlockBehaviour.Properties properties) {
+        super(properties.noOcclusion());
+        this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
     }
-    */
-	
-	@Override
-	public boolean onBlockActivated (World world, BlockPos pos, IBlockState state, EntityPlayer player, EnumHand hand, EnumFacing facing, float hitX, float hitY, float hitZ) {
-		if (world.isRemote) player.openGui(Arcade.instance, -2, world, pos.getX(), pos.getY(), pos.getZ());
 
-        /*
-        TileEntity tile = world.getTileEntity(pos);
+    @Override
+    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+        builder.add(FACING);
+    }
 
-        if (tile instanceof TileEntityArcade) {
-            TileEntityArcade arcade = (TileEntityArcade)tile;
+    @Nullable
+    @Override
+    public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
+        return new BlockEntityPusher(pos, state);
+    }
 
-            if (world.isRemote) player.openGui(Arcade.instance, arcade.getGameID(), world, pos.getX(), pos.getY(), pos.getZ());
+    @Override
+    public RenderShape getRenderShape(BlockState state) {
+        return RenderShape.MODEL;
+    }
+
+    @Override
+    public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {
+        BlockPos above = pos.above();
+        if (level.getBlockState(above).canBeReplaced()) {
+            level.setBlock(above, ModRegistries.BLOCK_INVISIBLE.get().defaultBlockState().setValue(BlockInvisible.FACING, state.getValue(FACING)), 3);
         }
-        */
-		return true;
-	}
-	
-	@Override
-	public void breakBlock (World world, BlockPos pos, IBlockState state) {
-		super.breakBlock(world, pos, state);
-		world.removeTileEntity(pos);
-	}
-	
-	@Override
-	public boolean eventReceived (IBlockState state, World world, BlockPos pos, int eventId, int eventParam) {
-		super.eventReceived(state, world, pos, eventId, eventParam);
-		TileEntity tile = world.getTileEntity(pos);
-		return tile == null ? false : tile.receiveClientEvent(eventId, eventParam);
-	}
-	
-	@Override
-	public EnumBlockRenderType getRenderType (IBlockState state) {
-		return EnumBlockRenderType.MODEL;
-	}
+    }
+
+    @Override
+    public void playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
+        super.playerWillDestroy(level, pos, state, player);
+        BlockPos above = pos.above();
+        if (level.getBlockState(above).getBlock() instanceof BlockInvisible) {
+            level.destroyBlock(above, false);
+        }
+    }
+
+    @Override
+    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        if (level.isClientSide) {
+            superhb.arcademod.client.ClientAccess.openPusherGui(level, pos, player);
+        }
+        return InteractionResult.SUCCESS;
+    }
+
+    @Override
+    public BlockState getStateForPlacement(BlockPlaceContext context) {
+        return this.defaultBlockState().setValue(FACING, context.getHorizontalDirection());
+    }
 }

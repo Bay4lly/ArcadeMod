@@ -1,26 +1,24 @@
 package superhb.arcademod.api.gui;
 
-import net.minecraft.client.audio.PositionedSoundRecord;
-import net.minecraft.client.audio.SoundHandler;
-import net.minecraft.client.gui.GuiButton;
-import net.minecraft.init.SoundEvents;
-import net.minecraft.util.SoundEvent;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
+import net.minecraft.client.sounds.SoundManager;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundEvents;
 
 public class GuiSoundButton extends GuiButtonScalable {
-    private SoundEvent sound;
+    private final SoundEvent sound;
 
-    public GuiSoundButton(int id, int x, int y, int width, int height, float scale, String text, SoundEvent sound) {
-        super(id, x, y, width, height, scale, text);
+    public GuiSoundButton(int x, int y, int width, int height, float scale, String text, SoundEvent sound, OnPress onPress) {
+        super(x, y, width, height, scale, text, onPress);
         this.sound = sound;
     }
 
-    public GuiSoundButton(int id, int x, int y, int width, int height, float scale, String text) {
-        super(id, x, y, width, height, scale, text);
-        sound = SoundEvents.UI_BUTTON_CLICK;
+    public GuiSoundButton(int x, int y, int width, int height, float scale, String text, OnPress onPress) {
+        this(x, y, width, height, scale, text, SoundEvents.UI_BUTTON_CLICK.value(), onPress);
     }
 
     @Override
-    public void playPressSound (SoundHandler handler) {
-        handler.playSound(PositionedSoundRecord.getMasterRecord(sound, 1.0F));
+    public void playDownSound(SoundManager handler) {
+        handler.play(SimpleSoundInstance.forUI(sound, 1.0F));
     }
 }

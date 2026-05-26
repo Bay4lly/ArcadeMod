@@ -1,65 +1,41 @@
 package superhb.arcademod.network.pong;
 
-import io.netty.buffer.ByteBuf;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.util.IThreadListener;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.WorldServer;
-import net.minecraftforge.fml.common.network.ByteBufUtils;
-import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
-import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
-import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraftforge.network.NetworkEvent;
 
-import java.awt.*;
-import java.util.List;
+import java.util.function.Supplier;
 
-public class ServerPongMessage implements IMessage {
-	private BlockPos pos;
-	private Point paddle, ball;
-	private int paddleId, score, guiScreen, menu;
-	private String playerName;
-	private boolean disconnect;
-	
-	public ServerPongMessage () {}
-	
-	// Join
-	public ServerPongMessage (BlockPos pos, int paddleId, EntityPlayer player) {
-		this.pos = pos;
-		this.paddleId = paddleId;
-		this.playerName = player.getName();
-	}
-	
-	@Override
-	public void toBytes (ByteBuf buf) {
-		buf.writeInt(pos.getX());
-		buf.writeInt(pos.getY());
-		buf.writeInt(pos.getZ());
-		
-		buf.writeInt(paddleId);
-		
-		ByteBufUtils.writeUTF8String(buf, playerName);
-	}
-	
-	@Override
-	public void fromBytes (ByteBuf buf) {
-		pos = new BlockPos(buf.readInt(), buf.readInt(), buf.readInt());
-		paddleId = buf.readInt();
-		playerName = ByteBufUtils.readUTF8String(buf);
-	}
-	
-	public static class Handler implements IMessageHandler<ServerPongMessage, IMessage> {
-		@Override
-		public IMessage onMessage (final ServerPongMessage message, final MessageContext context) {
-			IThreadListener thread = (WorldServer)context.getServerHandler().player.world;
-			
-			thread.addScheduledTask(() ->{
-				List<EntityPlayer> players = context.getServerHandler().player.getServerWorld().playerEntities;
-				
-				for (EntityPlayer player : players) {
-					//player
-				}
-			});
-			return null;
-		}
-	}
+public class ServerPongMessage {
+    private final BlockPos pos;
+    private final int paddleId;
+    private final String playerName;
+
+    public ServerPongMessage(BlockPos pos, int paddleId, String playerName) {
+        this.pos = pos;
+        this.paddleId = paddleId;
+        this.playerName = playerName;
+    }
+
+    public static void encode(ServerPongMessage message, FriendlyByteBuf buf) {
+        buf.writeBlockPos(message.pos);
+        buf.writeInt(message.paddleId);
+        buf.writeUtf(message.playerName);
+    }
+
+    public static ServerPongMessage decode(FriendlyByteBuf buf) {
+        return new ServerPongMessage(buf.readBlockPos(), buf.readInt(), buf.readUtf());
+    }
+
+    public static void handle(ServerPongMessage message, Supplier<NetworkEvent.Context> contextSupplier) {
+        NetworkEvent.Context context = contextSupplier.get();
+        context.enqueueWork(() -> {
+            ServerPlayer player = context.getSender();
+            if (player != null) {
+                // Implementation for server-side pong logic
+            }
+        });
+        context.setPacketHandled(true);
+    }
 }

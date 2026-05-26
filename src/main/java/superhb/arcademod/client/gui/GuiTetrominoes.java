@@ -1,56 +1,32 @@
 package superhb.arcademod.client.gui;
 
-import net.minecraft.client.audio.PositionedSoundRecord;
-import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.resources.I18n;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.init.SoundEvents;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.SoundCategory;
-import net.minecraft.util.SoundEvent;
-import org.lwjgl.input.Keyboard;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.Level;
 import superhb.arcademod.Reference;
 import superhb.arcademod.api.gui.GuiArcade;
-import net.minecraft.world.World;
-import superhb.arcademod.client.ArcadeItems;
+import superhb.arcademod.Arcade;
 import superhb.arcademod.client.audio.ArcadeSounds;
+import superhb.arcademod.client.tileentity.BlockEntityArcade;
 import superhb.arcademod.client.audio.LoopingSound;
-import superhb.arcademod.client.tileentity.TileEntityArcade;
-import superhb.arcademod.util.KeyHandler;
 
-import java.awt.*;
-import java.io.IOException;
+import org.lwjgl.glfw.GLFW;
+import java.awt.Color;
+import java.awt.Point;
 import java.util.ArrayList;
+import net.minecraft.world.item.ItemStack;
 
-// TODO: Add sounds?
 public class GuiTetrominoes extends GuiArcade {
-    // 10x18 Blocks
-    // Each shape placed is 17 pts
-    // Final shape that makes row is worth 58 pts (41 pts per row)
-    // Every 10 rows level goes up 1 (maxing out at 10)
-    // Board Size: 130x234
-    // Next Piece Area Size: 50x28
-    // Side Text: Level (1-10), Rows, Score
-    // Reward 1 Ticket per row
-    // Cost 2 Coins
+    private static final ResourceLocation TEXTURE = new ResourceLocation(Reference.MODID, "textures/gui/tetrominoes.png");
 
-    // UV - GUI, Play Block, Preview Block, Down Arrow, Up Arrow, Right Arrow (Below Play Block)
-    private static final ResourceLocation texture = new ResourceLocation(Reference.MODID + ":textures/gui/tetrominoes.png");
-
-    // Texture Variables
     private static final int GUI_X = 210;
     private static final int GUI_Y = 254;
     private static final int PLAY_BLOCK = 13;
     private static final int PREVIEW_BLOCK = 11;
-    private static final int ARROW_VERTICAL_X = 11;
-    private static final int ARROW_VERTICAL_Y = 7;
-    private static final int ARROW_HORIZONTAL_X = 7;
-    private static final int ARROW_HORIZONTAL_Y = 11;
 
-    // Music Variables
-    private LoopingSound theme;
-
-    // Game Variables
     private int score = 0, row = 0, level = 1;
     private boolean gameOver = false;
     private int rotation = 0;
@@ -64,255 +40,245 @@ public class GuiTetrominoes extends GuiArcade {
     private int prevControlTick = 0, controlSpeed = 2;
     private int prevGameTick = 0;
 
-    private final Point[][][] pieces = { // [shape][rotation][block]
+    private final Point[][][] pieces = {
             {
-                    { new Point(0, 1), new Point(1, 1), new Point(2, 1), new Point(3, 1) }, // I - 0
+                    { new Point(0, 1), new Point(1, 1), new Point(2, 1), new Point(3, 1) },
                     { new Point(1, 0), new Point(1, 1), new Point(1, 2), new Point(1, 3) },
                     { new Point(0, 1), new Point(1, 1), new Point(2, 1), new Point(3, 1) },
                     { new Point(1, 0), new Point(1, 1), new Point(1, 2), new Point(1, 3) }
             },
             {
-                    { new Point(0, 1), new Point(1, 1), new Point(2, 1), new Point(2, 2) }, // J - 1
+                    { new Point(0, 1), new Point(1, 1), new Point(2, 1), new Point(2, 2) },
                     { new Point(1, 0), new Point(1, 1), new Point(1, 2), new Point(0, 2) },
                     { new Point(0, 1), new Point(1, 1), new Point(2, 1), new Point(0, 0) },
                     { new Point(1, 0), new Point(1, 1), new Point(1, 2), new Point(2, 0) }
             },
             {
-                    { new Point(0, 1), new Point(1, 1), new Point(2, 1), new Point(0, 2) }, // L - 2
+                    { new Point(0, 1), new Point(1, 1), new Point(2, 1), new Point(0, 2) },
                     { new Point(1, 0), new Point(1, 1), new Point(1, 2), new Point(0, 0) },
                     { new Point(0, 1), new Point(1, 1), new Point(2, 1), new Point(2, 0) },
                     { new Point(1, 0), new Point(1, 1), new Point(1, 2), new Point(2, 2) }
             },
             {
-                    { new Point(1, 1), new Point(2, 1), new Point(0, 2), new Point(1, 2) }, // S - 3
+                    { new Point(1, 1), new Point(2, 1), new Point(0, 2), new Point(1, 2) },
                     { new Point(0, 1), new Point(0, 2), new Point(1, 2), new Point(1, 3) },
                     { new Point(1, 1), new Point(2, 1), new Point(0, 2), new Point(1, 2) },
                     { new Point(0, 1), new Point(0, 2), new Point(1, 2), new Point(1, 3) }
             },
             {
-                    { new Point(0, 1), new Point(1, 1), new Point(1, 2), new Point(2, 2) }, // Z - 4
+                    { new Point(0, 1), new Point(1, 1), new Point(1, 2), new Point(2, 2) },
                     { new Point(1, 1), new Point(0, 2), new Point(1, 2), new Point(0, 3) },
                     { new Point(0, 1), new Point(1, 1), new Point(1, 2), new Point(2, 2) },
                     { new Point(1, 1), new Point(0, 2), new Point(1, 2), new Point(0, 3) }
             },
             {
-                    { new Point(0, 1), new Point(0, 2), new Point(1, 1), new Point(1, 2) }, // O - 5
+                    { new Point(0, 1), new Point(0, 2), new Point(1, 1), new Point(1, 2) },
                     { new Point(0, 1), new Point(0, 2), new Point(1, 1), new Point(1, 2) },
                     { new Point(0, 1), new Point(0, 2), new Point(1, 1), new Point(1, 2) },
                     { new Point(0, 1), new Point(0, 2), new Point(1, 1), new Point(1, 2) }
             },
             {
-                    { new Point(0, 1), new Point(1, 1), new Point(2, 1), new Point(1, 2) }, // T - 6
+                    { new Point(0, 1), new Point(1, 1), new Point(2, 1), new Point(1, 2) },
                     { new Point(1, 0), new Point(1, 1), new Point(2, 1), new Point(1, 2) },
                     { new Point(1, 0), new Point(0, 1), new Point(1, 1), new Point(2, 1) },
                     { new Point(1, 0), new Point(0, 1), new Point(1, 1), new Point(1, 2) }
             }
     };
-    
-    private final Color[] colors = {
-    		Color.cyan,
-			Color.blue,
-			new Color(1.0F, 0.549F, 0.0F), // Orange
-			Color.GREEN,
-			Color.RED,
-			Color.yellow,
-			new Color(1.0F, 0.078F, 0.576F) // Pink
-	};
 
-    public GuiTetrominoes (World world, TileEntityArcade tileEntity, EntityPlayer player) {
-        super(world, tileEntity, null, player);
+    private final Color[] colors = {
+            Color.cyan,
+            Color.blue,
+            new Color(1.0F, 0.549F, 0.0F),
+            Color.GREEN,
+            Color.RED,
+            Color.yellow,
+            new Color(1.0F, 0.078F, 0.576F)
+    };
+
+    public GuiTetrominoes(Level world, BlockEntityArcade tileEntity, Player player) {
+        super(world, tileEntity, null, player, Component.literal("Tetrominoes"));
         setGuiSize(GUI_X, GUI_Y, 0.9F);
-        setTexture(texture);
+        setTexture(TEXTURE);
         setOffset(-30, 0);
         setButtonPos((GUI_X / 2) - (buttonWidth / 2) - 30, GUI_Y - 32);
         setStartMenu(0);
         setCost(2);
 
-        nextShape = getWorld().rand.nextInt(7);
+        nextShape = world.random.nextInt(7);
 
-        board = new int[10][18]; // [x][y]
+        board = new int[10][18];
         for (int x = 0; x < 10; x++) {
             for (int y = 0; y < 18; y++) {
                 board[x][y] = -1;
             }
         }
     }
-    
+
+    private LoopingSound theme;
+
     @Override
-    public void updateScreen () {
-    	super.updateScreen();
-    	
-    	if (inMenu) {
-			// Game Over Timer
-			if (menu == 3) {
-				if (tickCounter >= 60) {
-					tickCounter = 0;
-					checkMenuAfterGameOver();
-					nextShape = getWorld().rand.nextInt(7);
-					score = 0;
-					row = 0;
-					level = 1;
-					rotation = 0;
-					for (int x = 0; x < 10; x++) {
-						for (int y = 0; y < 18; y++) {
-							board[x][y] = -1;
-						}
-					}
-				}
-			}
-		} else {
-    		if (theme == null) theme = new LoopingSound(getTileEntity(), ArcadeSounds.TETROMINOES, SoundCategory.BLOCKS, getVolume());
-			if (!mc.getSoundHandler().isSoundPlaying(theme)) mc.getSoundHandler().playSound(theme);
-
-			if (gameOver) {
-				menu = 3;
-				giveNextPiece = false;
-				inMenu = true;
-				gameOver = false;
-				if (mc.getSoundHandler().isSoundPlaying(theme)) mc.getSoundHandler().stopSound(theme);
-				giveReward(ArcadeItems.TICKET, row);
-				// TODO: Send Score to NBT
-			}
-		
-			if (giveNextPiece) {
-				rotation = 0;
-				curShape = nextShape;
-				nextShape = getWorld().rand.nextInt(7);
-				piecePoint = new Point(3, 0);
-				giveNextPiece = false;
-			}
-		
-			// Move Current Piece down or place
-			if ((tickCounter - prevGameTick) >= (isKeyDown(KeyHandler.down.getKeyCode()) ? speed[0] : speed[level])) {
-				prevGameTick = tickCounter;
-			
-				if (canMoveDown()) piecePoint.y++;
-				else place();
-			}
-		
-			// Controls
-			if ((tickCounter - prevControlTick) >= controlSpeed) {
-				prevControlTick = tickCounter;
-				if (isKeyDown(KeyHandler.left.getKeyCode())) {
-					if (canMoveLeft()) piecePoint.x--;
-				} else if (isKeyDown(KeyHandler.right.getKeyCode())) {
-					if (canMoveRight()) piecePoint.x++;
-				}
-			}
-		}
-	}
-
-    // TODO: Make leaderboard menu
-    // TODO: Save high score to nbt
-    // TODO: Save leaderboard (Top 10) to nbt
-    @Override
-    public void drawScreen (int mouseX, int mouseY, float partialTicks) {
-        playX = xScaled - (GUI_X / 2) + 10;
-        playY = yScaled - (GUI_Y / 2) + 10;
-
-        nextX = playX + 140;
-        nextY = playY + 8;
-
-        super.drawScreen(mouseX, mouseY, partialTicks);
-    
-        int controlWidth = this.fontRenderer.getStringWidth(I18n.format("option.arcademod:control.locale"));
-        int settingsWidth = this.fontRenderer.getStringWidth(I18n.format("option.arcademod:setting.locale"));
-
-        if (inMenu) {
-            switch (menu) {
-                case 0: // Main Menu
-                    int titleWidth = this.fontRenderer.getStringWidth(I18n.format("game.arcademod:tetrominoes.name"));
-                    int startWidth = this.fontRenderer.getStringWidth(I18n.format("option.arcademod:start.locale"));
-
-                    this.fontRenderer.drawString(I18n.format("game.arcademod:tetrominoes.name"), playX + (130 / 2) - (titleWidth / 2), playY + 2, Color.white.getRGB());
-                    this.fontRenderer.drawString(I18n.format("option.arcademod:start.locale"), playX + (130 / 2) - (startWidth / 2), (height / 2), Color.white.getRGB());
-                    this.fontRenderer.drawString(I18n.format("option.arcademod:control.locale"), playX + (130 / 2) - (controlWidth / 2), (height / 2) + 10, Color.white.getRGB());
-					this.fontRenderer.drawString(I18n.format("option.arcademod:setting.locale"), playX + (130 / 2) - (settingsWidth / 2), (height / 2) + 20, Color.white.getRGB());
-
-                    // Arrows
-                    if (menuOption == 0) drawRightArrow(playX + (130 / 2) - 40, (height / 2) - 2, true); // Start
-                    else if (menuOption == 1) drawRightArrow(playX + (130 / 2) - 40, (height / 2) + 8, true); // Controls
-					else if (menuOption == 2) drawRightArrow(playX + (130 / 2) - 40, (height / 2) + 18, true); // Settings
-                    break;
-                case 1: // Level Select
-                    int levelWidth = this.fontRenderer.getStringWidth(String.format("[%d]", level));
-                    this.fontRenderer.drawString(I18n.format("text.arcademod:level_select.tetrominoes.locale"), playX + (130 / 2) - 40, yScaled, Color.white.getRGB());
-                    this.fontRenderer.drawString(String.format("[%d]", level), playX + (130 / 2) + 35 - (levelWidth / 2), yScaled, Color.white.getRGB());
-                    
-                    // Arrows
-					drawUpArrow(playX + (130 / 2) + 29, yScaled - 10, true);
-					drawDownArrow(playX + (130 / 2) + 29, yScaled + 10);
-
-                    // Back
-                    this.fontRenderer.drawString("[" + KeyHandler.left.getDisplayName() + "] " + I18n.format("option.arcademod:back.name"), playX + 2, yScaled + (GUI_Y / 2) - 20, Color.white.getRGB());
-                    break;
-                case 2: // Controls
-                    this.fontRenderer.drawString(I18n.format("option.arcademod:control.locale"), playX + (130 / 2) - (controlWidth / 2), playY + 2, Color.white.getRGB());
-
-                    // Controls
-                    this.fontRenderer.drawString("[" + KeyHandler.up.getDisplayName() + "] " + I18n.format("control.arcademod:up.tetrominoes.name"), playX + (130 / 2) - 40, yScaled - 10, Color.white.getRGB());
-                    this.fontRenderer.drawString("[" + KeyHandler.down.getDisplayName() + "] " + I18n.format("control.arcademod:down.name"), playX + (130 / 2) - 40, yScaled, Color.white.getRGB());
-                    this.fontRenderer.drawString("[" + KeyHandler.left.getDisplayName() + "] " + I18n.format("control.arcademod:left.name"), playX + (130 / 2) - 40, yScaled + 10, Color.white.getRGB());
-                    this.fontRenderer.drawString("[" + KeyHandler.right.getDisplayName() + "] " + I18n.format("control.arcademod:right.name"), playX + (130 / 2) - 40, yScaled + 20, Color.white.getRGB());
-                    this.fontRenderer.drawString("[" + KeyHandler.select.getDisplayName() + "] " + I18n.format("control.arcademod:select.name"), playX + (130 / 2) - 40, yScaled + 30, Color.white.getRGB());
-
-                    // Back
-                    this.fontRenderer.drawString("[" + KeyHandler.left.getDisplayName() + "] " + I18n.format("option.arcademod:back.name"), playX + 2, yScaled + (GUI_Y / 2) - 20, Color.white.getRGB());
-                    break;
-                case 3: // Game Over
-                    int overWidth = this.fontRenderer.getStringWidth(I18n.format("text.arcademod:gameover.locale"));
-                    this.fontRenderer.drawString(I18n.format("text.arcademod:gameover.locale"), playX + (130 / 2) - (overWidth / 2), yScaled - 20, Color.white.getRGB());
-                    int scoreWidth = this.fontRenderer.getStringWidth(I18n.format("text.arcademod:score.locale") + ": " + score);
-                    this.fontRenderer.drawString(I18n.format("text.arcademod:score.locale") + ": " + score, playX + (130 / 2) - (scoreWidth / 2), yScaled - 10, Color.white.getRGB());
-                    // TODO: Highscore
-                    break;
-				case 4: // Settings
-					this.fontRenderer.drawString(I18n.format("option.arcademod:setting.locale"), playX + (130 / 2) - (settingsWidth / 2), playY +2, Color.white.getRGB());
-
-					int volumeWidth = this.fontRenderer.getStringWidth(I18n.format("text.arcademod:volume.locale"));
-					this.fontRenderer.drawString(I18n.format("text.arcademod:volume.locale"), playX + (130 / 2) - (volumeWidth / 2), height / 2, Color.white.getRGB());
-					drawVolumeBar(playX + (130 / 2), (height / 2) + 10);
-
-					// Back
-					this.fontRenderer.drawString("[" + KeyHandler.left.getDisplayName() + "] " + I18n.format("option.arcademod:back.name"), playX + 2, yScaled + (GUI_Y / 2) - 20, Color.white.getRGB());
-					// Edit/Save
-					this.fontRenderer.drawString("[" + KeyHandler.select.getDisplayName() + "] " + (editVolume ? I18n.format("text.arcademod:save.locale") : I18n.format("text.arcademod:edit.locale")), playX + 2, yScaled + (GUI_Y / 2) - 30, Color.white.getRGB());
-
-					break;
+    public void tick() {
+        super.tick();
+        if (!inMenu) {
+            if (theme == null) {
+                // Match 1.12.2 behavior: play as a block/arcade sound (not global MUSIC volume).
+                theme = new LoopingSound(tileEntity, superhb.arcademod.init.ModRegistries.TETROMINOES.get(), net.minecraft.sounds.SoundSource.BLOCKS, getVolume());
+            }
+            if (!minecraft.getSoundManager().isActive(theme)) {
+                minecraft.getSoundManager().play(theme);
             }
         } else {
-            // Draw Tetrominos
-            drawTetromino(curShape, rotation, piecePoint.x, piecePoint.y); // Max 17
-            for (int x = 0; x < 10; x++) {
-                for (int y = 0; y < 18; y++) {
-                    if (board[x][y] != -1) drawBlock(board[x][y], x, y);
+            if (theme != null) {
+                if (minecraft.getSoundManager().isActive(theme)) {
+                    minecraft.getSoundManager().stop(theme);
+                }
+                theme = null;  // Nullify so a fresh instance is created if the game restarts
+            }
+        }
+
+        if (inMenu) {
+            if (menu == 3) {
+                if (tickCounter >= 60) {
+                    tickCounter = 0;
+                    prevGameTick = 0;
+                    prevControlTick = 0;
+                    checkMenuAfterGameOver();
+                    nextShape = world.random.nextInt(7);
+                    score = 0;
+                    row = 0;
+                    level = 1;
+                    rotation = 0;
+                    giveNextPiece = false;
+                    for (int x = 0; x < 10; x++) {
+                        for (int y = 0; y < 18; y++) {
+                            board[x][y] = -1;
+                        }
+                    }
                 }
             }
-            drawPreview(nextShape);
+        } else {
+            // TODO: Sound playing
 
-            // Next
-            fontRenderer.drawString(I18n.format("text.arcademod:next.tetrominoes.locale") + ":", xScaled + (GUI_X / 2) - 60, playY, 4210752);
+            if (gameOver) {
+                menu = 3;
+                giveNextPiece = false;
+                inMenu = true;
+                gameOver = false;
+                // Match 1.12.2: 1 ticket per row
+                if (row > 0) {
+                    Arcade.logger.info("GuiTetrominoes: awarding tickets=" + row);
+                    giveReward(new ItemStack(superhb.arcademod.init.ModRegistries.TICKET.get(), row));
+                }
+            }
 
-            // Level (1-10)
-            fontRenderer.drawSplitString(I18n.format("text.arcademod:level.tetrominoes.locale") + ": " + level, xScaled + (GUI_X / 2) - 60, nextY + 38, 50, 4210752);
+            if (giveNextPiece) {
+                rotation = 0;
+                curShape = nextShape;
+                nextShape = world.random.nextInt(7);
+                piecePoint = new Point(3, 0);
+                giveNextPiece = false;
+            }
 
-            // Row
-            fontRenderer.drawSplitString(I18n.format("text.arcademod:row.tetrominoes.locale") + ": " + row, xScaled + (GUI_X / 2) - 60, nextY + 63, 50, 4210752);
+            if ((tickCounter - prevGameTick) >= (GLFW.glfwGetKey(minecraft.getWindow().getWindow(), GLFW.GLFW_KEY_DOWN) == GLFW.GLFW_PRESS ? speed[0] : speed[level])) {
+                prevGameTick = tickCounter;
 
-            // Score
-            fontRenderer.drawSplitString(I18n.format("text.arcademod:score.locale") + ": " + score, xScaled + (GUI_X / 2) - 60, nextY + 88, 50, 4210752);
+                if (canMoveDown()) piecePoint.y++;
+                else place();
+            }
+
+            if ((tickCounter - prevControlTick) >= controlSpeed) {
+                prevControlTick = tickCounter;
+                if (GLFW.glfwGetKey(minecraft.getWindow().getWindow(), GLFW.GLFW_KEY_LEFT) == GLFW.GLFW_PRESS) {
+                    if (canMoveLeft()) piecePoint.x--;
+                } else if (GLFW.glfwGetKey(minecraft.getWindow().getWindow(), GLFW.GLFW_KEY_RIGHT) == GLFW.GLFW_PRESS) {
+                    if (canMoveRight()) piecePoint.x++;
+                }
+            }
         }
     }
 
-    // TODO: Add Pause button and menu
     @Override
-    protected void keyTyped (char typedChar, int keyCode) throws IOException {
-        if (keyCode == KeyHandler.up.getKeyCode()) { // Up/Rotate Forward
+    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
+        playX = xScaled - (GUI_X / 2) + 10;
+        playY = yScaled - (GUI_Y / 2) + 10;
+        nextX = playX + 140;
+        nextY = playY + 8;
+
+        super.render(guiGraphics, mouseX, mouseY, partialTicks);
+
+        guiGraphics.pose().pushPose();
+        guiGraphics.pose().scale(scale, scale, scale);
+
+        if (inMenu) {
+            switch (menu) {
+                case 0:
+                    guiGraphics.drawCenteredString(font, Component.translatable("game.arcademod.tetrominoes"), playX + (130 / 2), playY + 2, 0xFFFFFF);
+                    guiGraphics.drawCenteredString(font, Component.translatable("option.arcademod.start"), playX + (130 / 2), (height / 2), 0xFFFFFF);
+                    guiGraphics.drawCenteredString(font, Component.translatable("option.arcademod.control"), playX + (130 / 2), (height / 2) + 10, 0xFFFFFF);
+                    guiGraphics.drawCenteredString(font, Component.translatable("option.arcademod.setting"), playX + (130 / 2), (height / 2) + 20, 0xFFFFFF);
+
+                    if (menuOption == 0) drawRightArrow(guiGraphics, playX + (130 / 2) - 40, (height / 2) - 2);
+                    else if (menuOption == 1) drawRightArrow(guiGraphics, playX + (130 / 2) - 40, (height / 2) + 8);
+                    else if (menuOption == 2) drawRightArrow(guiGraphics, playX + (130 / 2) - 40, (height / 2) + 18);
+                    break;
+                case 1:
+                    guiGraphics.drawCenteredString(font, Component.translatable("text.arcademod.level_select.tetrominoes"), playX + (130 / 2) - 10, yScaled, 0xFFFFFF);
+                    guiGraphics.drawString(font, Component.literal("[" + level + "]"), playX + (130 / 2) + 25, yScaled, 0xFFFFFF);
+
+                    drawUpArrow(guiGraphics, playX + (130 / 2) + 29, yScaled - 10);
+                    drawDownArrow(guiGraphics, playX + (130 / 2) + 29, yScaled + 10);
+
+                    guiGraphics.drawString(font, Component.literal("[LEFT] Back"), playX + 2, yScaled + (GUI_Y / 2) - 20, 0xFFFFFF);
+                    break;
+                case 2:
+                    guiGraphics.drawCenteredString(font, Component.translatable("option.arcademod.control"), playX + (130 / 2), playY + 2, 0xFFFFFF);
+
+                    guiGraphics.drawString(font, Component.literal("[UP] Rotate"), playX + (130 / 2) - 40, yScaled - 10, 0xFFFFFF);
+                    guiGraphics.drawString(font, Component.literal("[DOWN] Down"), playX + (130 / 2) - 40, yScaled, 0xFFFFFF);
+                    guiGraphics.drawString(font, Component.literal("[LEFT] Left"), playX + (130 / 2) - 40, yScaled + 10, 0xFFFFFF);
+                    guiGraphics.drawString(font, Component.literal("[RIGHT] Right"), playX + (130 / 2) - 40, yScaled + 20, 0xFFFFFF);
+                    guiGraphics.drawString(font, Component.literal("[ENTER] Select"), playX + (130 / 2) - 40, yScaled + 30, 0xFFFFFF);
+
+                    guiGraphics.drawString(font, Component.literal("[LEFT] Back"), playX + 2, yScaled + (GUI_Y / 2) - 20, 0xFFFFFF);
+                    break;
+                case 3:
+                    guiGraphics.drawCenteredString(font, Component.translatable("text.arcademod.gameover"), playX + (130 / 2), yScaled - 20, 0xFFFFFF);
+                    guiGraphics.drawCenteredString(font, Component.literal("Score: " + score), playX + (130 / 2), yScaled - 10, 0xFFFFFF);
+                    break;
+                case 4:
+                    guiGraphics.drawCenteredString(font, Component.translatable("option.arcademod.setting"), playX + (130 / 2), playY + 2, 0xFFFFFF);
+                    guiGraphics.drawCenteredString(font, Component.translatable("text.arcademod.volume"), playX + (130 / 2), height / 2, 0xFFFFFF);
+                    // drawVolumeBar
+                    guiGraphics.drawString(font, Component.literal("[LEFT] Back"), playX + 2, yScaled + (GUI_Y / 2) - 20, 0xFFFFFF);
+                    guiGraphics.drawString(font, Component.literal("[ENTER] " + (editVolume ? "Save" : "Edit")), playX + 2, yScaled + (GUI_Y / 2) - 30, 0xFFFFFF);
+                    break;
+            }
+        } else {
+            drawTetromino(guiGraphics, curShape, rotation, piecePoint.x, piecePoint.y);
+            for (int x = 0; x < 10; x++) {
+                for (int y = 0; y < 18; y++) {
+                    if (board[x][y] != -1) drawBlock(guiGraphics, board[x][y], x, y);
+                }
+            }
+            drawPreview(guiGraphics, nextShape);
+
+            guiGraphics.drawString(font, Component.translatable("text.arcademod.next.tetrominoes"), playX + 140, playY, 0x404040);
+            guiGraphics.drawString(font, Component.literal("Level: " + level), playX + 140, nextY + 38, 0x404040);
+            guiGraphics.drawString(font, Component.literal("Row: " + row), playX + 140, nextY + 63, 0x404040);
+            guiGraphics.drawString(font, Component.literal("Score: " + score), playX + 140, nextY + 88, 0x404040);
+        }
+
+        guiGraphics.pose().popPose();
+    }
+
+    @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (keyCode == GLFW.GLFW_KEY_UP) {
             if (inMenu) {
-                if (menu == 0) { // Start
+                if (menu == 0) {
                     if (menuOption == 0) menuOption = 2;
                     else menuOption--;
-                } else if (menu == 1) { // Level Select
+                } else if (menu == 1) {
                     if (level != 10) level++;
                 }
             } else {
@@ -321,74 +287,57 @@ public class GuiTetrominoes extends GuiArcade {
                     else rotation++;
                 }
             }
-        }
-        if (keyCode == KeyHandler.down.getKeyCode()) { // Down
+        } else if (keyCode == GLFW.GLFW_KEY_DOWN) {
             if (inMenu) {
-                if (menu == 0) { // Start
+                if (menu == 0) {
                     if (menuOption == 2) menuOption = 0;
                     else menuOption++;
-                } else if (menu == 1) { // Level Select
+                } else if (menu == 1) {
                     if (level != 1) level--;
                 }
             }
-        }
-        if (keyCode == KeyHandler.left.getKeyCode()) { // Left/Back
+        } else if (keyCode == GLFW.GLFW_KEY_LEFT) {
             if (inMenu) {
-                if (menu == 1 || menu == 2 || (menu == 4 && !editVolume)) menu = 0; // Level Select or Control Menu
-				if (menu == 4 && editVolume) decreaseVolume();
+                if (menu == 1 || menu == 2 || (menu == 4 && !editVolume)) menu = 0;
+                if (menu == 4 && editVolume) decreaseVolume();
             }
-        }
-        if (keyCode == KeyHandler.right.getKeyCode()) { // Right
+        } else if (keyCode == GLFW.GLFW_KEY_RIGHT) {
             if (inMenu) {
-            	if (menu == 4 && editVolume) increaseVolume();
+                if (menu == 4 && editVolume) increaseVolume();
             }
-        }
-        if (keyCode == KeyHandler.select.getKeyCode()) { // Select
+        } else if (keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER) {
             if (inMenu) {
-                if (menu == 0) { // Start
+                if (menu == 0) {
                     switch (menuOption) {
-                        case 0: // Start
-                            menu = 1;
-                            break;
-                        case 1: // Controls
-                            menu = 2;
-                            break;
-						case 2: // Settings
-							menu = 4;
-							break;
+                        case 0: menu = 1; break;
+                        case 1: menu = 2; break;
+                        case 2: menu = 4; break;
                     }
                 } else if (menu == 1) {
                     inMenu = false;
-
-                    if ((tickCounter- prevGameTick) >= 1) {
+                    if ((tickCounter - prevGameTick) >= 1) {
                         prevGameTick = tickCounter;
                         canGetCoinBack = false;
                         giveNextPiece = true;
                     }
                 } else if (menu == 4) {
-                	if (editVolume) {
-                		editVolume = false;
-                		saveVolume(true);
-					} else editVolume = true;
-				}
+                    if (editVolume) {
+                        editVolume = false;
+                        saveVolume(true);
+                    } else editVolume = true;
+                }
             }
         }
-        if (keyCode == 1) { // Esc
-            if (!inMenu) giveReward(ArcadeItems.TICKET, row);
-            else {
-            	if (menu == 4 && editVolume) { // Settings
-            		editVolume = false;
-            		saveVolume(false);
-            		return;
-				}
-			}
-            if (mc.getSoundHandler().isSoundPlaying(theme)) mc.getSoundHandler().stopSound(theme);
+        // ESC key - give tickets when exiting mid-game (matches 1.12.2 behavior)
+        if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
+            if (!inMenu && row > 0) {
+                giveReward(new ItemStack(superhb.arcademod.init.ModRegistries.TICKET.get(), row));
+            }
         }
-        super.keyTyped(typedChar, keyCode);
+        return super.keyPressed(keyCode, scanCode, modifiers);
     }
 
-    // TODO: Better check
-    private void checkLevel () {
+    private void checkLevel() {
         if (row >= 10 && level == 1) level = 2;
         else if (row >= 20 && level == 2) level = 3;
         else if (row >= 30 && level == 3) level = 4;
@@ -400,87 +349,83 @@ public class GuiTetrominoes extends GuiArcade {
         else if (row >= 90 && level == 9) level = 10;
     }
 
-    private void drawTetromino (int shape, int rotation, int x, int y) {
-        glColor(colors[shape]);
-        this.mc.getTextureManager().bindTexture(texture);
-        for (int i = 0; i < 4; i++) this.drawTexturedModalRect(playX + (x * PLAY_BLOCK) + (pieces[shape][rotation][i].x * PLAY_BLOCK), playY + (y * PLAY_BLOCK) + (pieces[shape][rotation][i].y * PLAY_BLOCK) - PLAY_BLOCK, GUI_X, 0, PLAY_BLOCK, PLAY_BLOCK);
+    private void setGuiColor(GuiGraphics guiGraphics, Color color) {
+        guiGraphics.setColor(color.getRed() / 255.0f, color.getGreen() / 255.0f, color.getBlue() / 255.0f, 1.0f);
     }
 
-    private void drawBlock (int shape, int x, int y) {
-    	glColor(colors[shape]);
-        this.mc.getTextureManager().bindTexture(texture);
-        this.drawTexturedModalRect(playX + (x * PLAY_BLOCK), playY + (y * PLAY_BLOCK), GUI_X, 0, PLAY_BLOCK, PLAY_BLOCK);
+    private void drawTetromino(GuiGraphics guiGraphics, int shape, int rotation, int x, int y) {
+        setGuiColor(guiGraphics, colors[shape]);
+        for (int i = 0; i < 4; i++) {
+            guiGraphics.blit(TEXTURE, playX + (x * PLAY_BLOCK) + (pieces[shape][rotation][i].x * PLAY_BLOCK), playY + (y * PLAY_BLOCK) + (pieces[shape][rotation][i].y * PLAY_BLOCK) - PLAY_BLOCK, GUI_X, 0, PLAY_BLOCK, PLAY_BLOCK, 512, 512);
+        }
+        guiGraphics.setColor(1.0f, 1.0f, 1.0f, 1.0f);
     }
 
-    private void drawPreview (int shape) {
+    private void drawBlock(GuiGraphics guiGraphics, int shape, int x, int y) {
+        setGuiColor(guiGraphics, colors[shape]);
+        guiGraphics.blit(TEXTURE, playX + (x * PLAY_BLOCK), playY + (y * PLAY_BLOCK), GUI_X, 0, PLAY_BLOCK, PLAY_BLOCK, 512, 512);
+        guiGraphics.setColor(1.0f, 1.0f, 1.0f, 1.0f);
+    }
+
+    private void drawPreview(GuiGraphics guiGraphics, int shape) {
         int[][] pos = {
-                { 3, -2 }, // I
-                { 8, -8 }, // J
-                { 8, -8 }, // L
-                { 8, -8 }, // S
-                { 8, -8 }, // Z
-                { 14, -8 }, // O
-                { 8, -8 } // T
+                { 3, -2 }, { 8, -8 }, { 8, -8 }, { 8, -8 }, { 8, -8 }, { 14, -8 }, { 8, -8 }
         };
 
-        glColor(colors[shape]);
-        this.mc.getTextureManager().bindTexture(texture);
-        for (int i = 0; i < 4; i++) this.drawTexturedModalRect(nextX + pos[shape][0] + (pieces[shape][0][i].x * PREVIEW_BLOCK), nextY + pos[shape][1] + (pieces[shape][0][i].y * PREVIEW_BLOCK), (GUI_X + PLAY_BLOCK), 0, PREVIEW_BLOCK, PREVIEW_BLOCK);
+        setGuiColor(guiGraphics, colors[shape]);
+        for (int i = 0; i < 4; i++) {
+            guiGraphics.blit(TEXTURE, nextX + pos[shape][0] + (pieces[shape][0][i].x * PREVIEW_BLOCK), nextY + pos[shape][1] + (pieces[shape][0][i].y * PREVIEW_BLOCK), (GUI_X + PLAY_BLOCK), 0, PREVIEW_BLOCK, PREVIEW_BLOCK, 512, 512);
+        }
+        guiGraphics.setColor(1.0f, 1.0f, 1.0f, 1.0f);
     }
 
-    private boolean canRotate () {
-        int nextRot = 0;
-
-        if (rotation == 3) nextRot = 0;
-        else nextRot = rotation + 1;
-
-        // Top Check
-        if (piecePoint.y == 0) {
-            // S, Z, O can rotate at y = 0
-            if (curShape < 3 || curShape == 6) return false;
-        }
+    private boolean canRotate() {
+        int nextRot = (rotation == 3) ? 0 : rotation + 1;
+        if (piecePoint.y == 0 && (curShape < 3 || curShape == 6)) return false;
         for (int i = 0; i < 4; i++) {
-            // Side Check
-            if ((piecePoint.x + pieces[curShape][nextRot][i].x) < 0 || (piecePoint.x + pieces[curShape][nextRot][i].x) > 9) return false;
-            // Piece Check
-            if (board[piecePoint.x + pieces[curShape][nextRot][i].x][piecePoint.y + pieces[curShape][nextRot][i].y - 1] != -1) return false;
+            int px = piecePoint.x + pieces[curShape][nextRot][i].x;
+            int py = piecePoint.y + pieces[curShape][nextRot][i].y - 1;
+            if (px < 0 || px > 9) return false;
+            if (py >= 0 && board[px][py] != -1) return false;
         }
         return true;
     }
 
-    private boolean canMoveLeft () {
+    private boolean canMoveLeft() {
         for (int i = 0; i < 4; i++) {
-            if ((piecePoint.x + pieces[curShape][rotation][i].x) == 0) return false;
-            else {
-                if (board[piecePoint.x + pieces[curShape][rotation][i].x - 1][piecePoint.y + pieces[curShape][rotation][i].y - 1] != -1) return false;
-            }
+            int px = piecePoint.x + pieces[curShape][rotation][i].x;
+            int py = piecePoint.y + pieces[curShape][rotation][i].y - 1;
+            if (px == 0) return false;
+            if (py >= 0 && board[px - 1][py] != -1) return false;
         }
         return true;
     }
 
-    private boolean canMoveRight () {
+    private boolean canMoveRight() {
         for (int i = 0; i < 4; i++) {
-            if ((piecePoint.x + pieces[curShape][rotation][i].x) == 9) return false;
-            else {
-                if (board[piecePoint.x + pieces[curShape][rotation][i].x + 1][piecePoint.y + pieces[curShape][rotation][i].y - 1] != -1) return false;
-            }
+            int px = piecePoint.x + pieces[curShape][rotation][i].x;
+            int py = piecePoint.y + pieces[curShape][rotation][i].y - 1;
+            if (px == 9) return false;
+            if (py >= 0 && board[px + 1][py] != -1) return false;
         }
         return true;
     }
 
-    private boolean canMoveDown () {
+    private boolean canMoveDown() {
         for (int i = 0; i < 4; i++) {
-            if ((piecePoint.y + pieces[curShape][rotation][i].y - 1) == 17) return false;
-            else {
-                if (board[piecePoint.x + pieces[curShape][rotation][i].x][piecePoint.y + pieces[curShape][rotation][i].y] != -1) return false;
-            }
+            int px = piecePoint.x + pieces[curShape][rotation][i].x;
+            int py = piecePoint.y + pieces[curShape][rotation][i].y;
+            if (py - 1 == 17) return false;
+            if (py >= 0 && board[px][py] != -1) return false;
         }
         return true;
     }
 
-    private void place () {
+    private void place() {
         for (int i = 0; i < 4; i++) {
-            board[piecePoint.x + pieces[curShape][rotation][i].x][piecePoint.y + pieces[curShape][rotation][i].y - 1] = curShape;
+            int px = piecePoint.x + pieces[curShape][rotation][i].x;
+            int py = piecePoint.y + pieces[curShape][rotation][i].y - 1;
+            if (py >= 0) board[px][py] = curShape;
         }
         for (int x = 0; x < 10; x++) {
             if (board[x][0] != -1) {
@@ -493,27 +438,41 @@ public class GuiTetrominoes extends GuiArcade {
         giveNextPiece = true;
     }
 
-    private void checkForRow () {
-        ArrayList boardList = new ArrayList();
+    private void checkForRow() {
+        ArrayList<int[]> boardList = new ArrayList<>();
         for (int i = 0; i < 18; i++) {
-            boardList.add(i, new int[] { board[0][i], board[1][i], board[2][i], board[3][i], board[4][i], board[5][i], board[6][i], board[7][i], board[8][i], board[9][i]});
+            boardList.add(new int[] { board[0][i], board[1][i], board[2][i], board[3][i], board[4][i], board[5][i], board[6][i], board[7][i], board[8][i], board[9][i]});
         }
 
-        for (int y = 0; y < 18; y++) {
-            if (board[0][y] != -1 && board[1][y] != -1 && board[2][y] != -1 && board[3][y] != -1 && board[4][y] != -1 && board[5][y] != -1 && board[6][y] != -1 && board[7][y] != -1 && board[8][y] != -1 && board[9][y] != -1) {
+        for (int y = 0; y < boardList.size(); y++) {
+            int[] rowData = boardList.get(y);
+            boolean full = true;
+            for (int x = 0; x < 10; x++) {
+                if (rowData[x] == -1) full = false;
+            }
+            if (full) {
                 row++;
                 checkLevel();
                 score += 41;
                 boardList.remove(y);
                 boardList.add(0, new int[] { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 });
+                y--;  // Re-check same index since rows shifted down
             }
         }
 
         for (int y = 0; y < 18; y++) {
-            int[] boardX = (int[])boardList.get(y);
+            int[] boardX = boardList.get(y);
             for (int x = 0; x < 10; x++) {
                 board[x][y] = boardX[x];
             }
         }
+    }
+
+    @Override
+    public void onClose() {
+        if (theme != null) {
+            minecraft.getSoundManager().stop(theme);
+        }
+        super.onClose();
     }
 }

@@ -1,69 +1,45 @@
 package superhb.arcademod.network;
 
-import io.netty.buffer.ByteBuf;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiScreen;
-import net.minecraft.util.IThreadListener;
-import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
-import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
-import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
-import superhb.arcademod.Arcade;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraftforge.network.NetworkEvent;
 import superhb.arcademod.api.gui.GuiArcade;
 
-public class ClientCoinMessage implements IMessage {
-	private boolean enoughCoins = true;
-	private int menu = -1;
-	
-	public ClientCoinMessage () {}
-	
-	public ClientCoinMessage (boolean enoughCoins, int menu) {
-		this.enoughCoins = enoughCoins;
-		this.menu = menu;
-	}
-	
-	@Override
-	public void toBytes (ByteBuf buf) {
-		buf.writeInt(menu);
-		buf.writeBoolean(enoughCoins);
-	}
-	
-	@Override
-	public void fromBytes (ByteBuf buf) {
-		menu = buf.readInt();
-		enoughCoins = buf.readBoolean();
-	}
-	
-	public boolean isEnoughCoins () {
-		return enoughCoins;
-	}
-	
-	public int getMenu () {
-		return menu;
-	}
-	
-	public static class Handler implements IMessageHandler<ClientCoinMessage, IMessage> {
-		@Override
-		public IMessage onMessage (final ClientCoinMessage message, final MessageContext context) {
-			IThreadListener thread = Minecraft.getMinecraft();
-			
-			thread.addScheduledTask(()->{
-				if (message.getMenu() == -1) {
-					GuiScreen screen = Minecraft.getMinecraft().currentScreen;
-					
-					if (screen instanceof GuiArcade) {
-						GuiArcade arcade = (GuiArcade)screen;
-						arcade.isEnoughCoins(message.isEnoughCoins());
-					}
-				} else {
-					GuiScreen screen = Minecraft.getMinecraft().currentScreen;
-					
-					if (screen instanceof GuiArcade) {
-						GuiArcade arcade = (GuiArcade)screen;
-						arcade.menu = message.getMenu();
-					}
-				}
-			});
-			return null;
-		}
-	}
+import java.util.function.Supplier;
+
+public class ClientCoinMessage {
+    private final boolean enoughCoins;
+    private final int menu;
+
+    public ClientCoinMessage(boolean enoughCoins, int menu) {
+        this.enoughCoins = enoughCoins;
+        this.menu = menu;
+    }
+
+    public static void encode(ClientCoinMessage message, FriendlyByteBuf buf) {
+        buf.writeInt(message.menu);
+        buf.writeBoolean(message.enoughCoins);
+    }
+
+    public static ClientCoinMessage decode(FriendlyByteBuf buf) {
+        int menu = buf.readInt();
+        boolean enough = buf.readBoolean();
+        return new ClientCoinMessage(enough, menu);
+    }
+
+    public static void handle(ClientCoinMessage message, Supplier<NetworkEvent.Context> contextSupplier) {
+        NetworkEvent.Context context = contextSupplier.get();
+        context.enqueueWork(() -> {
+            Screen screen = Minecraft.getInstance().screen;
+            if (screen instanceof GuiArcade arcade) {
+                if (message.menu == -1) {
+                    arcade.isEnoughCoins(message.enoughCoins);
+                } else {
+                    arcade.menu = message.menu;
+                }
+            }
+        });
+        context.setPacketHandled(true);
+    }
 }

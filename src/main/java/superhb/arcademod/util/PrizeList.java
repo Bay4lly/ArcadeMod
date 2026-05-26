@@ -1,6 +1,6 @@
 package superhb.arcademod.util;
 
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.item.ItemStack;
 
 public class PrizeList {
     private ItemStack stack;

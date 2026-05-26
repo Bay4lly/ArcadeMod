@@ -1,65 +1,41 @@
 package superhb.arcademod.network;
 
-import io.netty.buffer.ByteBuf;
-import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.IThreadListener;
-import net.minecraft.world.WorldServer;
-import net.minecraftforge.fml.common.network.ByteBufUtils;
-import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
-import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
-import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.network.NetworkEvent;
+import net.minecraft.world.entity.item.ItemEntity;
+
+import java.util.function.Supplier;
 import superhb.arcademod.Arcade;
 
-public class RewardMessage implements IMessage {
-    private ItemStack reward;
+public class RewardMessage {
+    private final ItemStack reward;
 
-    public RewardMessage () {}
-
-    public RewardMessage (ItemStack stack) {
-        reward = stack;
+    public RewardMessage(ItemStack stack) {
+        this.reward = stack;
     }
 
-    public RewardMessage (Item item, int amount, int meta, NBTTagCompound compound) {
-        ItemStack reward = new ItemStack(item, amount, meta);
-        reward.setTagCompound(compound);
-        this.reward = reward;
+    public static void encode(RewardMessage message, FriendlyByteBuf buf) {
+        buf.writeItem(message.reward);
     }
 
-    public RewardMessage (Item item, int amount, int meta) {
-        reward = new ItemStack(item, amount, meta);
+    public static RewardMessage decode(FriendlyByteBuf buf) {
+        return new RewardMessage(buf.readItem());
     }
 
-    @Override
-    public void toBytes (ByteBuf buf) {
-        ByteBufUtils.writeItemStack(buf, reward);
-    }
-
-    @Override
-    public void fromBytes (ByteBuf buf) {
-        try  {
-            reward = ByteBufUtils.readItemStack(buf);
-        } catch (Exception e) {
-            Arcade.logger.info("Error: " + e);
-        }
-    }
-
-    public ItemStack getReward () {
-        return reward;
-    }
-
-    public static class Handler implements IMessageHandler<RewardMessage, IMessage> {
-        @Override
-        public IMessage onMessage (final RewardMessage message, final MessageContext context) {
-            IThreadListener thread = (WorldServer)context.getServerHandler().player.world;
-
-            thread.addScheduledTask(()->{
-				EntityPlayerMP player = context.getServerHandler().player;
-				player.inventory.addItemStackToInventory(message.getReward());
-			});
-            return null;
-        }
+    public static void handle(RewardMessage message, Supplier<NetworkEvent.Context> contextSupplier) {
+        NetworkEvent.Context context = contextSupplier.get();
+        context.enqueueWork(() -> {
+            ServerPlayer player = context.getSender();
+            if (player == null) {
+                Arcade.logger.warn("RewardMessage received but sender is null");
+                return;
+            }
+            Arcade.logger.info("RewardMessage: giving " + message.reward + " to " + player.getGameProfile().getName());
+            // Match 1.12.2 behaviour: simply add to player inventory (no automatic drop fallback)
+            player.getInventory().add(message.reward);
+        });
+        context.setPacketHandled(true);
     }
 }

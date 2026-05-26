@@ -1,10 +1,11 @@
 package superhb.arcademod.api.energy;
 
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
 import net.minecraftforge.common.util.INBTSerializable;
 import net.minecraftforge.energy.EnergyStorage;
 
-public class EnergyManager extends EnergyStorage implements INBTSerializable<NBTTagCompound> {
+public class EnergyManager extends EnergyStorage implements INBTSerializable<Tag> {
     public EnergyManager(int capacity) {
         super(capacity);
     }
@@ -22,12 +23,22 @@ public class EnergyManager extends EnergyStorage implements INBTSerializable<NBT
     }
 
     @Override
-    public NBTTagCompound serializeNBT () {
-        return null;
+    public Tag serializeNBT() {
+        CompoundTag tag = new CompoundTag();
+        tag.putInt("Energy", this.energy);
+        tag.putInt("Capacity", this.capacity);
+        tag.putInt("MaxReceive", this.maxReceive);
+        tag.putInt("MaxExtract", this.maxExtract);
+        return tag;
     }
 
     @Override
-    public void deserializeNBT (NBTTagCompound compound) {
-
+    public void deserializeNBT(Tag nbt) {
+        if (nbt instanceof CompoundTag tag) {
+            this.energy = tag.getInt("Energy");
+            this.capacity = tag.getInt("Capacity");
+            this.maxReceive = tag.getInt("MaxReceive");
+            this.maxExtract = tag.getInt("MaxExtract");
+        }
     }
 }

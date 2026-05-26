@@ -1,8 +1,8 @@
 package superhb.arcademod.util;
 
-import net.minecraft.util.IStringSerializable;
+import net.minecraft.util.StringRepresentable;
 
-public enum EnumMob implements IStringSerializable {
+public enum EnumMob implements StringRepresentable {
     /* Mob List
         - Bat
         - Blaze
@@ -56,7 +56,7 @@ public enum EnumMob implements IStringSerializable {
     }
 
     @Override
-    public String getName () {
+    public String getSerializedName () {
         return name;
     }
 

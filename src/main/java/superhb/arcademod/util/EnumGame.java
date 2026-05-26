@@ -1,8 +1,8 @@
 package superhb.arcademod.util;
 
-import net.minecraft.util.IStringSerializable;
+import net.minecraft.util.StringRepresentable;
 
-public enum EnumGame implements IStringSerializable {
+public enum EnumGame implements StringRepresentable {
 	SNAKE(0, "snake"),
 	TETROMINOES(1, "tetrominoes"),
 	PACMAN(2, "pacman"),
@@ -20,7 +20,7 @@ public enum EnumGame implements IStringSerializable {
 	}
 	
 	@Override
-	public String getName () {
+	public String getSerializedName () {
 		return registryName;
 	}
 	
